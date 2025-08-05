@@ -77,7 +77,7 @@
     });
 
     function sendSignupRequest(email, password, token, version) {
-      fetch("http://localhost:8080/signup", {
+      fetch("https://go-captcha-production.up.railway.app/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, recaptcha: token, version })
