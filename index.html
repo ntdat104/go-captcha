@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng ký với reCAPTCHA v2 và v3</title>
+  <!-- Load both versions -->
+  <script src="https://www.google.com/recaptcha/api.js?render=6LdqKJsrAAAAAOiuIjOdF3a6A8xfi906taLByFWq"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+  <h2>Đăng ký tài khoản</h2>
+
+  <label>
+    <input type="radio" name="recaptcha-version" value="v2" checked> reCAPTCHA v2
+  </label>
+  <label>
+    <input type="radio" name="recaptcha-version" value="v3"> reCAPTCHA v3
+  </label>
+
+  <form id="signup-form">
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Mật khẩu:</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <div id="captcha-v2" class="g-recaptcha" data-sitekey="6LfgLZsrAAAAAGjwTT4I1hEdmR-NmWgCuVlDOuNo"></div>
+
+    <input type="hidden" id="recaptchaToken" name="recaptcha">
+    <br>
+    <button type="submit">Đăng ký</button>
+  </form>
+
+  <div id="response"></div>
+
+  <script>
+    const form = document.getElementById('signup-form');
+
+    function getRecaptchaVersion() {
+      return document.querySelector('input[name="recaptcha-version"]:checked').value;
+    }
+
+    function toggleCaptchaUI() {
+      const version = getRecaptchaVersion();
+      document.getElementById('captcha-v2').style.display = (version === 'v2') ? 'block' : 'none';
+    }
+
+    document.querySelectorAll('input[name="recaptcha-version"]').forEach(radio => {
+      radio.addEventListener('change', toggleCaptchaUI);
+    });
+
+    toggleCaptchaUI();
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const email = form.email.value;
+      const password = form.password.value;
+      const version = getRecaptchaVersion();
+
+      if (version === 'v2') {
+        const token = grecaptcha.getResponse();
+        if (!token) {
+          alert('Vui lòng xác minh reCAPTCHA.');
+          return;
+        }
+
+        sendSignupRequest(email, password, token, version);
+        grecaptcha.reset();
+      } else {
+        grecaptcha.ready(function () {
+          grecaptcha.execute("6LdqKJsrAAAAAOiuIjOdF3a6A8xfi906taLByFWq", { action: "signup" }).then(function (token) {
+            sendSignupRequest(email, password, token, version);
+          });
+        });
+      }
+    });
+
+    function sendSignupRequest(email, password, token, version) {
+      fetch("http://localhost:8080/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, recaptcha: token, version })
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("response").innerText = JSON.stringify(data, null, 2);
+        });
+    }
+  </script>
+</body>
+</html>
